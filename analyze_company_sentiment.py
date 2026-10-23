@@ -1,62 +1,65 @@
-"""
-Company sentiment analysis using Gemini 2.5 Flash.
-Returns JSON with sentiment, risks, and recommendation.
+"""Optional legacy sentiment helper using the supported Google Gen AI SDK.
+
+The dashboard does not call this helper. Its call_gemini interface is retained;
+output is AI interpretation, not sourced competitive research.
 """
 
 import json
-from typing import Any, Optional
 
-import google.generativeai as genai
 import streamlit as st
+from google import genai
+from google.genai import types
+from pydantic import BaseModel, ConfigDict, Field
+
+from vantage.config import settings
+from vantage.research import clean_json, response_text
+
+
+class SentimentResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    sentiment: str = Field(min_length=1, max_length=1500)
+    risks: list[str] = Field(max_length=20)
+    recommendation: str | list[str]
 
 
 def _ensure_genai() -> bool:
-    if "GOOGLE_API_KEY" not in st.secrets:
-        st.error("Add `GOOGLE_API_KEY` to `.streamlit/secrets.toml`.")
+    if not settings().api_key:
+        st.error("The owner must configure a server-side Gemini API key to use this helper.")
         return False
-    key = st.secrets["GOOGLE_API_KEY"].strip()
-    if not key:
-        st.error("Set `GOOGLE_API_KEY` in `.streamlit/secrets.toml`. Get a key at https://aistudio.google.com/apikey")
-        return False
-    genai.configure(api_key=key)
     return True
 
 
-def call_gemini(prompt: str) -> Optional[dict[str, Any]]:
-    """
-    Call Gemini 2.5 Flash and return parsed JSON with keys:
-    - sentiment: overall sentiment (e.g. string or object)
-    - risks: list of risk items
-    - recommendation: string or list of recommendations
-    """
+def call_gemini(prompt: str) -> dict | None:
     if not _ensure_genai():
         return None
-
-    system = (
-        "You are an analyst. Respond only with valid JSON. No markdown code fences or extra text. "
-        "Include exactly: \"sentiment\", \"risks\" (array of strings), \"recommendation\" (string or array)."
-    )
-    full_prompt = f"{system}\n\n{prompt}"
-
+    if not isinstance(prompt, str) or not 1 <= len(prompt) <= 20_000:
+        st.error("Enter a prompt of 1–20,000 characters.")
+        return None
+    config = settings()
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        resp = model.generate_content(full_prompt)
-        text = (resp.text or "").strip()
-        if text.startswith("```"):
-            lines = text.split("\n")
-            text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
-        data = json.loads(text)
-        # Normalize to expected shape
-        if "sentiment" not in data:
-            data["sentiment"] = None
-        if "risks" not in data:
-            data["risks"] = []
-        if "recommendation" not in data:
-            data["recommendation"] = None
-        return data
-    except json.JSONDecodeError as e:
-        st.error(f"Could not parse model response as JSON: {e}")
-        return None
-    except Exception as e:
-        st.error(f"API error: {e}")
-        return None
+        with genai.Client(
+            api_key=config.api_key,
+            http_options=types.HttpOptions(
+                timeout=40_000, retry_options=types.HttpRetryOptions(attempts=1)
+            ),
+        ) as client:
+            response = client.models.generate_content(
+                model=config.model,
+                contents=prompt,
+                config={
+                    "system_instruction": "Return a concise AI interpretation with sentiment, risks, and recommendation. Do not invent sources or outcomes.",
+                    "response_mime_type": "application/json",
+                    "response_schema": SentimentResult,
+                    "max_output_tokens": 3000,
+                },
+            )
+        return SentimentResult.model_validate(
+            json.loads(clean_json(response_text(response)[0]))
+        ).model_dump()
+    except ValueError:
+        st.error("The AI answer did not match the sentiment schema.")
+    except Exception:
+        st.error(
+            "The AI service could not complete the request. Check configuration or retry later."
+        )
+    return None
