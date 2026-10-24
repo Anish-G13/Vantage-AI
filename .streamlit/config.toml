@@ -1,10 +1,13 @@
 [theme]
 # Professional corporate look: deep navy blue
-primaryColor = "#003366"
-backgroundColor = "#F8F9FA"
-secondaryBackgroundColor = "#E9ECEF"
-textColor = "#212529"
+primaryColor = "#123E68"
+backgroundColor = "#F7F9FC"
+secondaryBackgroundColor = "#EAF0F6"
+textColor = "#172C43"
 font = "sans serif"
 
 [server]
 headless = true
+
+[browser]
+gatherUsageStats = false
