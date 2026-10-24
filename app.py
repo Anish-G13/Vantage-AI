@@ -37,7 +37,8 @@ st.markdown(
     [data-testid="stMetric"] {background: #FFFFFF; border: 1px solid #DCE5EF;
         border-radius: 12px; padding: 1rem;}
     [data-testid="stMetricLabel"] {font-weight: 600;}
-    [data-testid="stMetricValue"] {font-size: clamp(1.1rem, 2.2vw, 2.1rem); line-height: 1.2;}
+    [data-testid="stMetricValue"], [data-testid="stMetricValue"] * {
+        font-size: clamp(1.1rem, 2.2vw, 2.1rem) !important; line-height: 1.2;}
     div[data-testid="stSidebarContent"] {padding-top: 1rem;}
     .vantage-kicker {font-size: .74rem; color: #387082; letter-spacing: .15em;
         font-weight: 700; margin-bottom: .25rem;}
