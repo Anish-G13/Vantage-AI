@@ -49,7 +49,7 @@ def call_gemini(prompt: str) -> dict | None:
                 config={
                     "system_instruction": "Return a concise AI interpretation with sentiment, risks, and recommendation. Do not invent sources or outcomes.",
                     "response_mime_type": "application/json",
-                    "response_schema": SentimentResult,
+                    "response_json_schema": SentimentResult.model_json_schema(),
                     "max_output_tokens": 3000,
                 },
             )
