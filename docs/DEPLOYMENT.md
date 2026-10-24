@@ -4,6 +4,11 @@ Preserve **https://vantageai.streamlit.app/** and the existing Streamlit Communi
 Cloud app: **Anish-G13/Vantage-AI**, branch **main**, entry point **app.py**.
 Do not create a replacement app or change its URL.
 
+The existing Cloud dashboard may display the repository's former name,
+`competitor-feature-gap-analyzer`. GitHub redirects that name to the same
+`Anish-G13/Vantage-AI` repository. Verify the redirect before changing any app
+configuration. The upgraded deployment uses Python 3.12.
+
 ## Existing app update
 
 1. Commit tested source, requirements, and documentation to the existing repository.

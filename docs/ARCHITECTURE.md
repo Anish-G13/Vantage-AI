@@ -25,7 +25,8 @@ separate frontend is required.
    prevent accidental duplicates. Control characters and excessive lengths fail
    validation; names are serialized as data, not interpolated instructions.
 2. If custom criteria are absent, ask Gemini for exactly five feature hypotheses
-   and a category, using a structured response schema. These are comparison
+   and a category, using `response_json_schema` with a Pydantic JSON Schema.
+   Strict local validation still checks the response. These are comparison
    criteria, not validated customer research.
 3. Request competitive research with the supported `google_search` tool. The
    prompt prioritizes official documentation, product pages, and pricing, and

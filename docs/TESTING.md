@@ -29,6 +29,39 @@ rather than model accuracy or successful live API access.
 The GitHub workflow runs on Python 3.11 and 3.12 with read-only repository
 permissions and no API key. The local environment uses Python 3.12.
 
+## Release verification — 2026-10-24 UTC
+
+- 94 automated tests passed locally, with 95% coverage of the core `vantage`
+  modules. Lint, formatting, and installed dependency checks passed. GitHub
+  checks passed on Python 3.11 and 3.12, including SDK request serialization
+  through a mocked HTTP transport. Automated tests never use a real API key.
+- Version 2.0.0 was verified at the existing public URL after rebuilding the
+  existing Community Cloud app on Python 3.12. The URL and server-side key
+  configuration were preserved.
+- In the deployed fictional demo, changing one rating updated Northstar PM's
+  known score from 50.0% to 62.5%. Increasing that feature's importance from
+  5 to 6 preserved the override and produced 64.3%. Reset restored the original
+  ratings while preserving the new weight. The ranked roadmap remained usable.
+- A real Linear/Asana request completed feature discovery and search-grounded
+  research. All ten cells received claim-linked sources in that single
+  response. Real AI strategic insights also completed. This confirms an
+  operational provider connection at the time of the check, not independent
+  accuracy, continuing availability, or validated customer value.
+- Sample grounding links resolved to official Linear and Asana pages. The
+  response also cited third-party sites; source linkage does not certify each
+  detail, product plan, or comparative judgment. Review the actual evidence.
+- The production comparison CSV and executive PDF downloaded successfully.
+  The ten comparison rows and the PDF scores matched the displayed snapshot.
+  Every page of the eight-page research report was rendered for visual review;
+  citation grouping was improved after detecting split source blocks.
+- Early live checks exposed a request-format rejection with the legacy schema
+  request path. The standard `response_json_schema` path and a fresh app
+  process resolved it. Regression tests cover both discovery and insight
+  serialization; operator diagnostics omit messages, prompts, and credentials.
+
+No external user study, interviews, adoption metrics, satisfaction results,
+revenue impact, or independent assessment-accuracy benchmark were conducted.
+
 ## Manual interface checks
 
 1. Start `streamlit run app.py` with no key. Verify onboarding, demo, and manual mode.
