@@ -14,6 +14,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
+    KeepTogether,
     LongTable,
     PageBreak,
     Paragraph,
@@ -389,17 +390,20 @@ def executive_pdf(
         )
     for url, index in source_numbers.items():
         source = source_objects[url]
-        story.append(p(f"[{index}] {source.title}", "VBody"))
         story.append(
-            Paragraph(
-                f'<link href="{escape(url, {chr(34): "&quot;"})}" color="#123E68">{pdf_text(url)}</link>',
-                styles["VSmall"],
-            )
-        )
-        story.append(
-            p(
-                "Model claim linked by the grounding provider: " + source.supported_text[:500],
-                "VSmall",
+            KeepTogether(
+                [
+                    p(f"[{index}] {source.title}", "VBody"),
+                    Paragraph(
+                        f'<link href="{escape(url, {chr(34): "&quot;"})}" color="#123E68">{pdf_text(url)}</link>',
+                        styles["VSmall"],
+                    ),
+                    p(
+                        "Model claim linked by the grounding provider: "
+                        + source.supported_text[:500],
+                        "VSmall",
+                    ),
+                ]
             )
         )
     story += [
