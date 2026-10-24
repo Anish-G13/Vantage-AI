@@ -298,7 +298,10 @@ class GeminiResearcher:
         if grounded:
             config["tools"] = [types.Tool(google_search=types.GoogleSearch())]
         else:
-            config.update(response_mime_type="application/json", response_schema=schema)
+            config.update(
+                response_mime_type="application/json",
+                response_json_schema=schema.model_json_schema(),
+            )
         for attempt in range(2):
             self.budget.take()
             try:
