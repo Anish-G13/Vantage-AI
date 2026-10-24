@@ -5,10 +5,11 @@ from unittest.mock import Mock
 import httpx
 import pytest
 from conftest import fake_response
+from google import genai
 from google.genai import errors, types
 
 from vantage.calculations import effective_assessments, prioritize
-from vantage.models import Insight
+from vantage.models import Discovery, Insight
 from vantage.research import (
     CallBudget,
     GeminiResearcher,
@@ -191,6 +192,29 @@ def test_unknown_failure_logs_only_safe_operator_metadata(caplog):
     assert "secret-key" not in caplog.text and "private" not in caplog.text
 
 
+@pytest.mark.parametrize("schema", [Discovery, Insight])
+def test_sdk_sends_standard_json_schema_instead_of_legacy_schema(schema):
+    requests = []
+
+    def respond(request):
+        requests.append(json.loads(request.content))
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": "{}"}]}}]})
+
+    client = genai.Client(
+        api_key="synthetic-key-never-sent-to-provider",
+        http_options=types.HttpOptions(client_args={"transport": httpx.MockTransport(respond)}),
+    )
+    try:
+        service = GeminiResearcher("synthetic-key", client=client)
+        service._generate("synthetic input", schema=schema)
+    finally:
+        client.close()
+    config = requests[0]["generationConfig"]
+    assert "responseSchema" not in config
+    assert config["responseJsonSchema"] == schema.model_json_schema()
+    assert config["responseJsonSchema"]["additionalProperties"] is False
+
+
 def test_transient_retry_is_bounded(monkeypatch, discovery_response):
     monkeypatch.setattr("vantage.research.time.sleep", lambda _: None)
     service, call = researcher_with(httpx.ReadTimeout("test"), discovery_response)
@@ -236,7 +260,7 @@ def test_strategic_insight_contract(demo):
     roadmap = prioritize(demo, effective, [5] * 5, [3] * 5, [3] * 5)
     result = service.insights(demo, effective, [5] * 5, roadmap)
     assert "fictional" in result.neutral_observations
-    assert call.call_count == 1 and "response_schema" in call.call_args.kwargs["config"]
+    assert call.call_count == 1 and "response_json_schema" in call.call_args.kwargs["config"]
 
 
 def test_strategic_insights_reject_invented_url(demo):
