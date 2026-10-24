@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import httpx
 import pytest
 from conftest import fake_response
-from google.genai import types
+from google.genai import errors, types
 
 from vantage.calculations import effective_assessments, prioritize
 from vantage.models import Insight
@@ -167,6 +167,28 @@ def test_errors_are_safe_and_bounded(code, error_code):
         service._generate("test", schema=Insight)
     assert info.value.code == error_code and "SECRET" not in str(info.value)
     assert call.call_count == 1
+
+
+@pytest.mark.parametrize("reason", ["API key not valid", "API key expired"])
+def test_http_400_credentials_are_identified_without_leaking_details(reason, caplog):
+    error = errors.ClientError(
+        400, {"error": {"message": reason + ": credential=SECRET", "status": "INVALID_ARGUMENT"}}
+    )
+    service, call = researcher_with(error)
+    with pytest.raises(ResearchError) as info:
+        service._generate("private comparison", grounded=True)
+    assert info.value.code == "key" and call.call_count == 1
+    assert "credential_error=True" in caplog.text
+    assert "SECRET" not in str(info.value) + caplog.text
+    assert "private comparison" not in caplog.text
+
+
+def test_unknown_failure_logs_only_safe_operator_metadata(caplog):
+    service, _ = researcher_with(RuntimeError("secret-key and private prompt"))
+    with pytest.raises(ResearchError):
+        service._generate("private comparison", schema=Insight)
+    assert "exception=RuntimeError" in caplog.text
+    assert "secret-key" not in caplog.text and "private" not in caplog.text
 
 
 def test_transient_retry_is_bounded(monkeypatch, discovery_response):
